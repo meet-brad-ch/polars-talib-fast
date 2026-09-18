@@ -1,7 +1,7 @@
 """Renders one ``.pyi`` per group module, so editors and type checkers see the signatures
 that ``_build`` creates at import time.
 
-Run ``python -m polars_talib._stubs`` after moving the ``ta-lib`` submodule; a test fails
+Run ``python -m polars_talib_fast._stubs`` after moving the ``ta-lib`` submodule; a test fails
 while the committed stubs are stale.
 """
 

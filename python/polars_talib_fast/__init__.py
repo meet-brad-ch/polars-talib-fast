@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import polars as pl
 
-from . import _polars_talib
+from . import _polars_talib_fast
 from ._build import MODULES, expression, specs
 from .cycle import *  # noqa: F403
 from .math_operators import *  # noqa: F403
@@ -29,7 +29,7 @@ from .volume import *  # noqa: F403
 if TYPE_CHECKING:
     from polars._typing import IntoExpr
 
-__talib_version__ = _polars_talib.version().split(" ")[0]
+__talib_version__ = _polars_talib_fast.version().split(" ")[0]
 
 
 def get_functions() -> list[str]:

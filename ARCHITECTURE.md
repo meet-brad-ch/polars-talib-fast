@@ -1,8 +1,8 @@
 # Architecture
 
-This document describes how polars-talib is built and why. It uses one name for each
+This document describes how polars-talib-fast is built and why. It uses one name for each
 thing. A *function* is one of the 161 indicators that TA-Lib provides. An *expression* is
-a Polars `Expr`. The *plugin* is the compiled module `polars_talib._polars_talib`.
+a Polars `Expr`. The *plugin* is the compiled module `polars_talib_fast._polars_talib_fast`.
 
 ## 1. The idea
 
@@ -14,7 +14,7 @@ interface* in `ta_abstract.h`. For a function name, it gives:
 - the outputs, with their type (integer or real),
 - the group and a one-line hint.
 
-polars-talib reads this description and lets it drive everything. One Rust expression runs
+polars-talib-fast reads this description and lets it drive everything. One Rust expression runs
 any function by name. Python builds the public API from the same description at import
 time. No function is written by hand. A new TA-Lib release adds its new functions without
 a code change.
@@ -29,11 +29,11 @@ src/talib.rs                   safe layer: Function (metadata) and Function::cal
 src/plugin.rs                  the one expression, `call`
 src/extra.rs                   expressions for indicators TA-Lib does not have
 src/lib.rs                     the Python module: version(), functions()
-python/polars_talib/_build.py  builds a Python function from each description
-python/polars_talib/<group>.py ten modules, one per TA-Lib group
-python/polars_talib/<group>.pyi generated type stubs for the same modules
-python/polars_talib/_stubs.py  the stub generator
-python/polars_talib/__init__.py exports, get_functions, hma, supersmoother
+python/polars_talib_fast/_build.py  builds a Python function from each description
+python/polars_talib_fast/<group>.py ten modules, one per TA-Lib group
+python/polars_talib_fast/<group>.pyi generated type stubs for the same modules
+python/polars_talib_fast/_stubs.py  the stub generator
+python/polars_talib_fast/__init__.py exports, get_functions, hma, supersmoother
 tests/                         pytest, oracle is ta-lib-python on the same TA-Lib
 ```
 
@@ -48,7 +48,7 @@ To move to a new TA-Lib release:
 
 1. Check out the new tag inside `ta-lib`.
 2. Run `uv sync`. This rebuilds the plugin.
-3. Run `uv run python -m polars_talib._stubs`. This regenerates the stubs.
+3. Run `uv run python -m polars_talib_fast._stubs`. This regenerates the stubs.
 4. Run `uv run pytest`. The coverage test lists the functions the new release added.
 
 ### 2.2 The C boundary (`src/ffi.rs`)
@@ -144,7 +144,7 @@ The TA-Lib layer is never changed for either route. TA-Lib's C source is never c
 `version()` returns TA-Lib's version string, and `functions()` returns the description of
 every function as a list of dicts.
 
-### 2.7 The Python API (`python/polars_talib/_build.py`)
+### 2.7 The Python API (`python/polars_talib_fast/_build.py`)
 
 `_build.py` turns each description into a Python function with a real signature:
 

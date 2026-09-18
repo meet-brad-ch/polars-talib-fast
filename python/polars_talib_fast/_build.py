@@ -17,7 +17,7 @@ from typing import Any
 import polars as pl
 from polars.plugins import register_plugin_function
 
-from . import _polars_talib
+from . import _polars_talib_fast
 
 PLUGIN = Path(__file__).parent
 
@@ -100,7 +100,7 @@ def specs() -> tuple[Spec, ...]:
             params=tuple(Param(*p) for p in f["params"]),
             outputs=tuple(Output(*o) for o in f["outputs"]),
         )
-        for f in _polars_talib.functions()
+        for f in _polars_talib_fast.functions()
     )
     return tuple(sorted(described, key=lambda s: groups.index(s.group)))
 

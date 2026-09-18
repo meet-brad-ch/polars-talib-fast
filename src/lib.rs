@@ -1,4 +1,4 @@
-//! `polars_talib._polars_talib`: the plugin binary (see `plugin.rs`) plus the two things the
+//! `polars_talib_fast._polars_talib_fast`: the plugin binary (see `plugin.rs`) plus the two things the
 //! Python side needs from TA-Lib itself, its version and the description of every function.
 
 mod extra;
@@ -53,7 +53,7 @@ fn functions(py: Python<'_>) -> PyResult<Vec<Bound<'_, PyDict>>> {
 }
 
 #[pymodule]
-fn _polars_talib(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _polars_talib_fast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     talib::initialize().map_err(runtime_error)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     m.add_function(wrap_pyfunction!(functions, m)?)?;

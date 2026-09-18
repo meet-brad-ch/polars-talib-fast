@@ -9,10 +9,10 @@ import polars as pl
 import pytest
 import talib
 
-import polars_talib as plta
+import polars_talib_fast as plta
 from data import frame, talib_reference
-from polars_talib import _stubs
-from polars_talib._build import MODULES, PLUGIN, specs
+from polars_talib_fast import _stubs
+from polars_talib_fast._build import MODULES, PLUGIN, specs
 
 
 def test_hma_is_the_hull_composition(ohlcv: pl.DataFrame) -> None:
@@ -25,7 +25,8 @@ def test_hma_is_the_hull_composition(ohlcv: pl.DataFrame) -> None:
 def test_committed_stubs_are_current() -> None:
     for group, module in MODULES.items():
         stub = (PLUGIN / f"{module}.pyi").read_text(encoding="utf-8")
-        assert stub == _stubs.render(group), f"{module}.pyi is stale: python -m polars_talib._stubs"
+        hint = f"{module}.pyi is stale: python -m polars_talib_fast._stubs"
+        assert stub == _stubs.render(group), hint
 
 
 def test_stub_signatures_match_runtime() -> None:
@@ -40,7 +41,7 @@ def test_stub_signatures_match_runtime() -> None:
 def test_each_function_lives_in_its_group_module() -> None:
     for spec in specs():
         fn = getattr(plta, spec.python_name)
-        assert fn.__module__ == f"polars_talib.{MODULES[spec.group]}"
+        assert fn.__module__ == f"polars_talib_fast.{MODULES[spec.group]}"
         assert fn is getattr(getattr(plta, MODULES[spec.group]), spec.python_name)
 
 

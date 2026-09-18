@@ -9,9 +9,9 @@ import polars as pl
 import pytest
 import talib
 
-import polars_talib as plta
+import polars_talib_fast as plta
 from data import frame, talib_reference
-from polars_talib._build import DEFAULT_COLUMN, Spec, specs
+from polars_talib_fast._build import DEFAULT_COLUMN, Spec, specs
 
 SHORT_WINDOW = 3
 FRAMES = {"synthetic": frame(), "talib-reference": talib_reference()}

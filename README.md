@@ -1,17 +1,17 @@
-# polars-talib
+# polars-talib-fast
 
 [![CI](https://github.com/meet-brad-ch/polars-talib/actions/workflows/ci.yml/badge.svg)](https://github.com/meet-brad-ch/polars-talib/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/meet-brad-ch/polars-talib?label=release)](https://github.com/meet-brad-ch/polars-talib/releases/latest)
+[![Release](https://img.shields.io/github/v/release/meet-brad-ch/polars-talib-fast?label=release)](https://github.com/meet-brad-ch/polars-talib/releases/latest)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Platform](https://img.shields.io/badge/platform-windows%20x64-lightgrey)
 ![TA-Lib](https://img.shields.io/badge/TA--Lib-0.7.1-blue)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/meet-brad-ch/polars-talib/blob/main/LICENSE)
 
 Every [TA-Lib](https://ta-lib.org) function as a [Polars](https://pola.rs) expression.
 
 ```python
 import polars as pl
-import polars_talib as plta
+import polars_talib_fast as plta
 
 df.with_columns(
     plta.sma(timeperiod=20).alias("sma20"),
@@ -83,7 +83,7 @@ own metadata.
 
 ## How it works
 
-The design is described in [ARCHITECTURE.md](ARCHITECTURE.md). In short: TA-Lib
+The design is described in [ARCHITECTURE.md](https://github.com/meet-brad-ch/polars-talib/blob/main/ARCHITECTURE.md). In short: TA-Lib
 describes its own functions through its *abstract interface*: inputs, parameters
 with defaults, outputs, group, hint. This library has **one** Rust expression that runs
 any TA-Lib function by name through that interface, and builds the Python API from the
@@ -93,7 +93,7 @@ a submodule bump:
 ```
 cd ta-lib && git checkout v0.7.1 && cd ..
 uv sync                                  # builds the extension
-uv run python -m polars_talib._stubs     # regenerate the .pyi stubs
+uv run python -m polars_talib_fast._stubs     # regenerate the .pyi stubs
 uv run pytest
 ```
 
@@ -102,12 +102,14 @@ build time.
 
 ## Install
 
-Windows x64, Python 3.10 or newer, from the wheel attached to a
-[release](https://github.com/meet-brad-ch/polars-talib/releases):
+Windows x64, Python 3.10 or newer:
 
 ```
-pip install https://github.com/meet-brad-ch/polars-talib/releases/download/v0.3.0/polars_talib-0.3.0-cp310-abi3-win_amd64.whl
+pip install polars-talib-fast
 ```
+
+The same wheel is attached to each
+[release](https://github.com/meet-brad-ch/polars-talib/releases).
 
 ## Tests
 

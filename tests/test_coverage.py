@@ -11,8 +11,8 @@ import pytest
 import talib
 from talib import abstract
 
-import polars_talib as plta
-from polars_talib._build import DEFAULT_COLUMN, MODULES, specs
+import polars_talib_fast as plta
+from polars_talib_fast._build import DEFAULT_COLUMN, MODULES, specs
 
 NAMES = [s.name for s in specs()]
 

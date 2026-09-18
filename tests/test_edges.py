@@ -4,8 +4,8 @@ columns, lazy evaluation."""
 import polars as pl
 import pytest
 
-import polars_talib as plta
-from polars_talib._build import expression
+import polars_talib_fast as plta
+from polars_talib_fast._build import expression
 
 SHORT = pl.DataFrame({"close": [1.0, 2.0, 3.0]})
 
