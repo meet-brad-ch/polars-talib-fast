@@ -45,21 +45,31 @@ def macd(close: pl.Series) -> pl.Series:
 
 def atr(cols: pl.Series) -> pl.Series:
     c = cols.struct
-    return pl.Series(talib.ATR(c.field("high").to_numpy(), c.field("low").to_numpy(), c.field("close").to_numpy(), 14))
+    return pl.Series(
+        talib.ATR(
+            c.field("high").to_numpy(), c.field("low").to_numpy(), c.field("close").to_numpy(), 14
+        )
+    )
 
 
 def engulfing(cols: pl.Series) -> pl.Series:
     c = cols.struct
-    return pl.Series(talib.CDLENGULFING(*(c.field(k).to_numpy() for k in ("open", "high", "low", "close"))))
+    return pl.Series(
+        talib.CDLENGULFING(*(c.field(k).to_numpy() for k in ("open", "high", "low", "close")))
+    )
 
 
 MACD = pl.Struct({"macd": pl.Float64, "macdsignal": pl.Float64, "macdhist": pl.Float64})
 
 df.with_columns(
-    pl.col("close").map_batches(lambda s: pl.Series(talib.SMA(s.to_numpy(), 20)), return_dtype=pl.Float64).alias("sma20"),
+    pl.col("close")
+    .map_batches(lambda s: pl.Series(talib.SMA(s.to_numpy(), 20)), return_dtype=pl.Float64)
+    .alias("sma20"),
     pl.col("close").map_batches(macd, return_dtype=MACD).over("symbol").alias("macd"),
     pl.struct("high", "low", "close").map_batches(atr, return_dtype=pl.Float64).alias("atr"),
-    pl.struct("open", "high", "low", "close").map_batches(engulfing, return_dtype=pl.Int32).alias("engulfing"),
+    pl.struct("open", "high", "low", "close")
+    .map_batches(engulfing, return_dtype=pl.Int32)
+    .alias("engulfing"),
 )
 ```
 
