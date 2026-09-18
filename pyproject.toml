@@ -22,10 +22,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/meet-brad-ch/polars-talib"
-Repository = "https://github.com/meet-brad-ch/polars-talib"
-Issues = "https://github.com/meet-brad-ch/polars-talib/issues"
-Changelog = "https://github.com/meet-brad-ch/polars-talib/releases"
+Homepage = "https://github.com/meet-brad-ch/polars-talib-fast"
+Repository = "https://github.com/meet-brad-ch/polars-talib-fast"
+Issues = "https://github.com/meet-brad-ch/polars-talib-fast/issues"
+Changelog = "https://github.com/meet-brad-ch/polars-talib-fast/releases"
 
 [build-system]
 requires = ["maturin>=1.15,<2"]

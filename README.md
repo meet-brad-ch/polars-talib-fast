@@ -1,11 +1,11 @@
 # polars-talib-fast
 
-[![CI](https://github.com/meet-brad-ch/polars-talib/actions/workflows/ci.yml/badge.svg)](https://github.com/meet-brad-ch/polars-talib/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/meet-brad-ch/polars-talib-fast?label=release)](https://github.com/meet-brad-ch/polars-talib/releases/latest)
+[![CI](https://github.com/meet-brad-ch/polars-talib-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/meet-brad-ch/polars-talib-fast/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/meet-brad-ch/polars-talib-fast?label=release)](https://github.com/meet-brad-ch/polars-talib-fast/releases/latest)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Platform](https://img.shields.io/badge/platform-windows%20x64-lightgrey)
 ![TA-Lib](https://img.shields.io/badge/TA--Lib-0.7.1-blue)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/meet-brad-ch/polars-talib/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/meet-brad-ch/polars-talib-fast/blob/main/LICENSE)
 
 Every [TA-Lib](https://ta-lib.org) function as a [Polars](https://pola.rs) expression.
 
@@ -83,7 +83,7 @@ own metadata.
 
 ## How it works
 
-The design is described in [ARCHITECTURE.md](https://github.com/meet-brad-ch/polars-talib/blob/main/ARCHITECTURE.md). In short: TA-Lib
+The design is described in [ARCHITECTURE.md](https://github.com/meet-brad-ch/polars-talib-fast/blob/main/ARCHITECTURE.md). In short: TA-Lib
 describes its own functions through its *abstract interface*: inputs, parameters
 with defaults, outputs, group, hint. This library has **one** Rust expression that runs
 any TA-Lib function by name through that interface, and builds the Python API from the
@@ -109,7 +109,7 @@ pip install polars-talib-fast
 ```
 
 The same wheel is attached to each
-[release](https://github.com/meet-brad-ch/polars-talib/releases).
+[release](https://github.com/meet-brad-ch/polars-talib-fast/releases).
 
 ## Tests
 
@@ -127,7 +127,7 @@ of its own in `src/extra.rs`. New indicators follow the same two routes; the TA-
 is never touched.
 
 ```
-git clone --recurse-submodules https://github.com/meet-brad-ch/polars-talib
+git clone --recurse-submodules https://github.com/meet-brad-ch/polars-talib-fast
 uv sync                                  # builds the extension
 uv run pytest
 ```
