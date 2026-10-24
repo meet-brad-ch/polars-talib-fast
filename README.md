@@ -3,7 +3,7 @@
 [![CI](https://github.com/meet-brad-ch/polars-talib-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/meet-brad-ch/polars-talib-fast/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/meet-brad-ch/polars-talib-fast?label=release)](https://github.com/meet-brad-ch/polars-talib-fast/releases/latest)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Platform](https://img.shields.io/badge/platform-windows%20x64-lightgrey)
+![Platform](https://img.shields.io/badge/platform-windows%20x64%20%7C%20linux%20x64-lightgrey)
 ![TA-Lib](https://img.shields.io/badge/TA--Lib-0.7.1-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/meet-brad-ch/polars-talib-fast/blob/main/LICENSE)
 
@@ -102,14 +102,15 @@ build time.
 
 ## Install
 
-Windows x64, Python 3.10 or newer:
+Windows x64 and Linux x64 (glibc 2.17 or newer), Python 3.10 or newer:
 
 ```
 pip install polars-talib-fast
 ```
 
-The same wheel is attached to each
-[release](https://github.com/meet-brad-ch/polars-talib-fast/releases).
+The same wheels are attached to each
+[release](https://github.com/meet-brad-ch/polars-talib-fast/releases). Both platforms run
+the full test suite in CI; Linux is also run locally in WSL2 with `tools/wsl_test.sh`.
 
 ## Tests
 
@@ -132,7 +133,7 @@ uv sync                                  # builds the extension
 uv run pytest
 ```
 
-Needs a Rust toolchain and the Visual Studio C++ build tools.
+Needs a Rust toolchain and a C compiler: the Visual Studio C++ build tools on Windows, gcc or clang on Linux.
 
 The idea of exposing TA-Lib as Polars expressions comes from
 [Yvictor/polars_ta_extension](https://github.com/Yvictor/polars_ta_extension).
