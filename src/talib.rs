@@ -213,12 +213,17 @@ pub enum Column {
 }
 
 impl Column {
-    /// `len` rows of the value a row without a result holds: NaN, or 0 for integers.
-    fn empty(integer: bool, len: usize) -> Column {
+    /// `len` rows, of which the first `no_result` hold the value of a row without a result:
+    /// NaN, or 0 for integers. The other rows are zero, for TA-Lib to overwrite. Zeroed memory
+    /// comes from the allocator without a write pass; a NaN fill of every row cost about
+    /// 0.5 ms per million rows and output.
+    fn empty(integer: bool, len: usize, no_result: usize) -> Column {
         if integer {
             Column::Integer(vec![0; len])
         } else {
-            Column::Real(vec![f64::NAN; len])
+            let mut v = vec![0.0; len];
+            v[..no_result].fill(f64::NAN);
+            Column::Real(v)
         }
     }
 
@@ -351,7 +356,8 @@ impl Function {
         let skipped = self.position_offset(offset, full)?;
         let mut holder = self.id.new_call(Library::core());
         let lookback = self.bind(&mut holder, columns, values)?;
-        let mut outputs = self.empty_outputs(full);
+        let no_result = if lookback < n { offset + lookback } else { full };
+        let mut outputs = self.empty_outputs(full, no_result);
         if lookback < n {
             let first = offset + lookback;
             self.compute(holder, &mut outputs, first, lookback, n, values)?;
@@ -370,8 +376,8 @@ impl Function {
         holder.lookback().map_err(|code| Error::code(&self.describe_call(values), code))
     }
 
-    fn empty_outputs(&self, full: usize) -> Vec<Column> {
-        self.outputs.iter().map(|o| Column::empty(o.integer, full)).collect()
+    fn empty_outputs(&self, full: usize, no_result: usize) -> Vec<Column> {
+        self.outputs.iter().map(|o| Column::empty(o.integer, full, no_result)).collect()
     }
 
     /// Let TA-Lib write rows `first..` of `outputs`, then check it wrote exactly those.
