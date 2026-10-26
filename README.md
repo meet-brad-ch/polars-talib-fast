@@ -3,11 +3,13 @@
 [![CI](https://github.com/meet-brad-ch/polars-talib-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/meet-brad-ch/polars-talib-fast/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/meet-brad-ch/polars-talib-fast?label=release)](https://github.com/meet-brad-ch/polars-talib-fast/releases/latest)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Platform](https://img.shields.io/badge/platform-windows%20x64%20%7C%20linux%20x64-lightgrey)
-![TA-Lib](https://img.shields.io/badge/TA--Lib-0.7.1-blue)
+![Platform](https://img.shields.io/badge/platform-windows%20x64%20%7C%20linux%20x64%20%7C%20macOS%20arm64-lightgrey)
+![TA-Lib](https://img.shields.io/badge/TA--Lib-0.8.3-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/meet-brad-ch/polars-talib-fast/blob/main/LICENSE)
 
-Every [TA-Lib](https://ta-lib.org) function as a [Polars](https://pola.rs) expression.
+Every [TA-Lib](https://ta-lib.org) function, 237 of them, as a [Polars](https://pola.rs)
+expression. TA-Lib comes from [`ta-lib`](https://crates.io/crates/ta-lib), TA-Lib's official
+Rust port.
 
 ```python
 import polars as pl
@@ -74,9 +76,10 @@ df.with_columns(
 ```
 
 Speed is not the difference. Measured on the same machine, one indicator on a million rows
-costs the same on both, and so do eight indicators in one `select` once ta-lib-python
-releases the GIL. Per symbol it is: under `.over("symbol")` the plugin runs the function
-per group without a Python call, and is 3 to 5 times faster with thousands of symbols.
+costs about the same on both (EMA: 1.7 ms here, 2.2 ms with ta-lib-python 0.8.2). Per symbol
+it is: under `.over("symbol")` the plugin runs the function per group without a Python call.
+The comparison with thousands of symbols and with several indicators in one `select` is in
+[ARCHITECTURE.md](https://github.com/meet-brad-ch/polars-talib-fast/blob/main/ARCHITECTURE.md), section 6.
 The difference is that every function is a native expression with TA-Lib's names,
 defaults, struct outputs, integer types, docstrings and type stubs, generated from TA-Lib's
 own metadata.
@@ -84,56 +87,72 @@ own metadata.
 ## How it works
 
 The design is described in [ARCHITECTURE.md](https://github.com/meet-brad-ch/polars-talib-fast/blob/main/ARCHITECTURE.md). In short: TA-Lib
-describes its own functions through its *abstract interface*: inputs, parameters
+describes its own functions through its *abstract API*: inputs, parameters
 with defaults, outputs, group, hint. This library has **one** Rust expression that runs
-any TA-Lib function by name through that interface, and builds the Python API from the
+any TA-Lib function by name through that API, and builds the Python API from the
 same metadata at import time. No function is written by hand, so a new TA-Lib release is
-a submodule bump:
+a version bump of the `ta-lib` crate plus new golden test data from the C library at the
+same tag:
 
 ```
-cd ta-lib && git checkout v0.7.1 && cd ..
-uv sync                                  # builds the extension
+# Cargo.toml: ta-lib = "=<version>"
+git -C tools/c_oracle/ta-lib checkout v<version>
+tools/c_oracle/generate.sh                    # golden data from the C library
+uv sync                                       # builds the extension
 uv run python -m polars_talib_fast._stubs     # regenerate the .pyi stubs
 uv run pytest
 ```
 
-TA-Lib is compiled from the `ta-lib` submodule by `build.rs`; nothing is downloaded at
-build time.
-
 ## Install
 
-Windows x64 and Linux x64 (glibc 2.17 or newer), Python 3.10 or newer:
+Windows x64, Linux x64 (glibc 2.17 or newer) and macOS on Apple silicon, Python 3.10 or
+newer:
 
 ```
 pip install polars-talib-fast
 ```
 
 The same wheels are attached to each
-[release](https://github.com/meet-brad-ch/polars-talib-fast/releases). Both platforms run
+[release](https://github.com/meet-brad-ch/polars-talib-fast/releases). All three platforms run
 the full test suite in CI; Linux is also run locally in WSL2 with `tools/wsl_test.sh`.
 
 ## Tests
 
-The oracle is ta-lib-python built on the same TA-Lib version. Every function is checked
-for the exact signature TA-Lib declares and for bit-identical values on float64 and float32
-input, on a synthetic frame with leading NaN rows and a null, and on TA-Lib's own 252-bar
-reference data. The two functions TA-Lib does not have are checked against their
-definitions: `hma` against the WMA composition, `supersmoother` against the recursion.
+The oracle is TA-Lib's C library at the same tag as the crate. `tools/c_oracle` builds it
+and writes `tests/golden`, and the oracle itself is checked against ta-lib-python, bit for bit,
+on the TA-Lib versions ta-lib-python ships (0.7.1 and 0.8.1). Every function is checked for
+the description TA-Lib's C library gives (names, defaults, hints, outputs) and for
+bit-identical values on float64 and float32 input, on a synthetic frame with leading NaN rows
+and a null, and on TA-Lib's own 252-bar reference data. The values are per platform: the
+functions that call `sin`, `exp` or `log` follow the platform's math library in the last bit,
+and on each platform the C library and the crate agree bit for bit (Windows and Linux golden
+data are committed, Linux written in WSL by `tools/c_oracle/wsl_generate.sh`; the macOS CI job
+writes its own). ta-lib-python 0.8.2 checks the names and signatures of the 201 functions it
+has. `supersmoother`, which TA-Lib does not have, is
+checked against its recursion.
 
 ## Beyond TA-Lib
 
-`hma` (Hull Moving Average) is a composition of `wma` calls in Python. `supersmoother`
-(Ehlers' 2-pole low-pass filter, with AmiBroker's IIR() coefficients) is a Rust expression
-of its own in `src/extra.rs`. New indicators follow the same two routes; the TA-Lib layer
-is never touched.
+`supersmoother` (Ehlers' 2-pole low-pass filter, with AmiBroker's IIR() coefficients) is a
+Rust expression of its own in `src/extra.rs`. An indicator lives here only while TA-Lib does
+not have it: `hma` was one until TA-Lib 0.8 added `HMA`, which a test shows to be the same
+Hull composition.
+
+## Build
 
 ```
-git clone --recurse-submodules https://github.com/meet-brad-ch/polars-talib-fast
+git clone https://github.com/meet-brad-ch/polars-talib-fast
 uv sync                                  # builds the extension
 uv run pytest
 ```
 
-Needs a Rust toolchain and a C compiler: the Visual Studio C++ build tools on Windows, gcc or clang on Linux.
+Needs a Rust toolchain. The C oracle (`tools/c_oracle`, only for new golden data) also needs
+the submodule (`git submodule update --init`) and a C compiler.
+
+## License
+
+MIT. The wheels contain TA-Lib, BSD-3-Clause, Copyright (c) 1999-2026 Mario Fortier:
+[LICENSES/TA-Lib.txt](https://github.com/meet-brad-ch/polars-talib-fast/blob/main/LICENSES/TA-Lib.txt).
 
 The idea of exposing TA-Lib as Polars expressions comes from
 [Yvictor/polars_ta_extension](https://github.com/Yvictor/polars_ta_extension).

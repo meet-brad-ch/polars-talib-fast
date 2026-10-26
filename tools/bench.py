@@ -92,6 +92,13 @@ class Scenarios:
             "ema over 2000 symbols": lambda: self.grouped.select(
                 p.ema(timeperiod=30).over("symbol")
             ),
+            # The same groups without TA-Lib: a plugin expression of this package, and Polars.
+            "supersmoother over 2000 symbols": lambda: self.grouped.select(
+                p.supersmoother(period=30.0).over("symbol")
+            ),
+            "ewm_mean over 2000 symbols": lambda: self.grouped.select(
+                pl.col("close").ewm_mean(span=30).over("symbol")
+            ),
             "ema 100 rows": lambda: self.small.select(p.ema(timeperiod=30)),
         }
 
