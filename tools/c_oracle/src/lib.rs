@@ -20,6 +20,12 @@ fn version() -> String {
     talib::version()
 }
 
+/// 1 when the C library computes its element-wise math functions with a platform kernel.
+#[pyfunction]
+fn vmath_kernel() -> PyResult<i32> {
+    talib::vmath_kernel().map_err(runtime_error)
+}
+
 /// Every TA-Lib function as a dict: `name`, `group`, `hint`, `inputs` (name, price parts),
 /// `params` (name, integer, default, hint) and `outputs` (name, integer).
 #[pyfunction]
@@ -89,6 +95,7 @@ fn list(py: Python<'_>, column: Column) -> PyResult<Bound<'_, PyList>> {
 fn c_oracle(m: &Bound<'_, PyModule>) -> PyResult<()> {
     talib::initialize().map_err(runtime_error)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
+    m.add_function(wrap_pyfunction!(vmath_kernel, m)?)?;
     m.add_function(wrap_pyfunction!(functions, m)?)?;
     m.add_function(wrap_pyfunction!(call, m)?)?;
     Ok(())

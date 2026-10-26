@@ -14,6 +14,8 @@
   keyed ``<dtype>/<NAME>/<variant>/<output>``. Per platform because the functions TA-Lib
   flags ``USES_TRANSCENDENTAL`` call the platform's libm (``sin``, ``exp``, ``log``...), whose
   last bit differs between platforms; on one platform, the C library and the crate agree.
+- ``<platform>/vmath.json``: whether the C library's math kernel is active there and the
+  functions it computes (see ``MathKernel``).
 
 ``tests/golden/talib_reference.csv`` (TA-Lib's 252-bar regression data, which ``tests/data.py``
 reads) is always rewritten from the submodule first. Leading rows where any input is NaN are
@@ -169,14 +171,36 @@ class Generator:
         return arrays
 
 
+class MathKernel:
+    """Where the C library computes element-wise math with a platform kernel (vForce on macOS
+    arm64): whether it is active here, and the functions whose batch loop is a
+    ``TA_VMATH_MAP`` in the C source. The crate computes them with scalar libm, which TA-Lib's
+    own tests hold to within 8 ULP of the kernel (``fuzz_vmath_near``)."""
+
+    MAP = re.compile(r"\bTA_VMATH_MAP\s*\(")
+
+    def __init__(self, ta_func: Path) -> None:
+        self.ta_func = ta_func
+
+    def functions(self) -> list[str]:
+        return sorted(
+            source.stem.removeprefix("ta_")
+            for source in self.ta_func.glob("ta_*.c")
+            if self.MAP.search(source.read_text(encoding="utf-8", errors="replace"))
+        )
+
+    def write(self, path: Path) -> None:
+        kernel = {"vmath_transcendental": c_oracle.vmath_kernel(), "functions": self.functions()}
+        path.write_text(json.dumps(kernel, indent=1) + "\n", encoding="utf-8", newline="\n")
+
+
 class GoldenData:
     """The command: reference CSV, then ``functions.json`` and one ``.npz`` per frame."""
 
     ROOT = Path(__file__).resolve().parents[2]
     GOLDEN = ROOT / "tests" / "golden"
-    TEST_DATA_C = (
-        Path(__file__).resolve().parent / "ta-lib" / "src" / "tools" / "ta_regtest" / "test_data.c"
-    )
+    TALIB = Path(__file__).resolve().parent / "ta-lib"
+    TEST_DATA_C = TALIB / "src" / "tools" / "ta_regtest" / "test_data.c"
 
     def __init__(self, out: Path) -> None:
         self.out = out
@@ -197,6 +221,7 @@ class GoldenData:
         )
         values = self.out / platform()
         values.mkdir(exist_ok=True)
+        MathKernel(self.TALIB / "src" / "ta_func").write(values / "vmath.json")
         generator = Generator([Spec.of(f) for f in functions])
         for name, df in {"synthetic": frame(), "talib-reference": talib_reference()}.items():
             arrays = generator.golden(df)

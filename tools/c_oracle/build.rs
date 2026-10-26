@@ -4,7 +4,8 @@
 //! `a*b+c` into an FMA on GCC/Clang, so explicit `fma()` calls are the only fused arithmetic.
 //!
 //! `TA_FuncInfo` lost its `camelCaseName` field in TA-Lib 0.8; the `ta_camel_case` cfg tells
-//! `ffi.rs` which layout the checked-out headers have.
+//! `ffi.rs` which layout the checked-out headers have. `ta_runtime_info` says whether the headers
+//! declare `TA_GetRuntimeInfo`.
 
 use std::fs;
 use std::path::Path;
@@ -28,6 +29,12 @@ fn main() {
     if (major, minor) < (0, 8) {
         println!("cargo::rustc-cfg=ta_camel_case");
     }
+    // TA_GetRuntimeInfo (0.8.3 on) says whether the math kernel is active (see lib.rs).
+    let common = fs::read_to_string(root.join("include/ta_common.h")).expect("ta_common.h");
+    println!("cargo::rustc-check-cfg=cfg(ta_runtime_info)");
+    if common.contains("TA_GetRuntimeInfo") {
+        println!("cargo::rustc-cfg=ta_runtime_info");
+    }
 
     let mut build = cc::Build::new();
     for dir in SOURCE_DIRS {
@@ -42,12 +49,6 @@ fn main() {
         build.include(&dir);
     }
     build.flag_if_supported("-ffp-contract=off");
-    // macOS: without these, 9 element-wise math functions (SIN, EXP, LN, ...) differed from the
-    // crate by 1 ULP while every other function matched. Hypothesis under test: Apple clang
-    // vectorizes those loops and calls vector math routines instead of scalar sin(), exp().
-    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
-        build.flag("-fno-vectorize").flag("-fno-slp-vectorize");
-    }
     build.include(root.join("include")).warnings(false).compile("ta-lib");
     println!("cargo:rerun-if-changed={TA_LIB}/VERSION");
 }

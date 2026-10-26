@@ -31,5 +31,5 @@ if ! git diff --quiet -- tests/golden/functions.json tests/golden/talib_referenc
   say "FAILED platform-independent golden files changed on Linux"; exit 1
 fi
 mkdir -p "$src/tests/golden/linux"
-cp tests/golden/linux/*.npz "$src/tests/golden/linux/" || { say "FAILED copy to $src/tests/golden/linux"; exit 1; }
+cp tests/golden/linux/*.npz tests/golden/linux/vmath.json "$src/tests/golden/linux/" || { say "FAILED copy to $src/tests/golden/linux"; exit 1; }
 say "DONE $(ls tests/golden/linux | tr '\n' ' ')-> $src/tests/golden/linux"

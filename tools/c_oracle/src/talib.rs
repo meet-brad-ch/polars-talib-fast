@@ -57,6 +57,21 @@ pub fn initialize() -> Result<(), Error> {
     check(unsafe { TA_Initialize() }, "TA_Initialize")
 }
 
+/// 1 when TA-Lib's batch math kernel computes the functions that are one math-library call per
+/// element (vForce, on macOS arm64), else 0: `TA_GetRuntimeInfo("vmath.transcendental")`.
+/// Versions before 0.8.3 have no kernel.
+pub fn vmath_kernel() -> Result<i32, Error> {
+    #[cfg(ta_runtime_info)]
+    {
+        let mut value: std::os::raw::c_int = 0;
+        let key = c"vmath.transcendental";
+        check(unsafe { TA_GetRuntimeInfo(key.as_ptr(), &mut value) }, "TA_GetRuntimeInfo")?;
+        Ok(value)
+    }
+    #[cfg(not(ta_runtime_info))]
+    Ok(0)
+}
+
 pub fn version() -> String {
     text(unsafe { TA_GetVersionString() })
 }

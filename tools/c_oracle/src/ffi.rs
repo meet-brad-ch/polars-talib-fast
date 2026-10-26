@@ -94,6 +94,9 @@ extern "C" {
     pub fn TA_Initialize() -> TA_RetCode;
     pub fn TA_GetVersionString() -> *const c_char;
     pub fn TA_SetRetCodeInfo(code: TA_RetCode, info: *mut TA_RetCodeInfo);
+    /// TA-Lib 0.8.3 on (see `build.rs`).
+    #[cfg(ta_runtime_info)]
+    pub fn TA_GetRuntimeInfo(key: *const c_char, value: *mut c_int) -> TA_RetCode;
 
     pub fn TA_GroupTableAlloc(table: *mut *mut TA_StringTable) -> TA_RetCode;
     pub fn TA_GroupTableFree(table: *mut TA_StringTable) -> TA_RetCode;
