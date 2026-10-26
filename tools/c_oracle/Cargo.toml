@@ -1,0 +1,21 @@
+[package]
+name = "c_oracle"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+description = "TA-Lib's C library behind a tiny Python module, the oracle that writes tests/golden"
+publish = false
+
+[lib]
+name = "c_oracle"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py310"] }
+serde = { version = "1", features = ["derive"] }
+
+[build-dependencies]
+cc = "1"
+
+# Not part of the plugin's build: its own workspace, its own target directory.
+[workspace]

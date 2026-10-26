@@ -2,7 +2,6 @@
 (leading NaN rows, a null in the middle, a ``periods`` column for MAVP), and TA-Lib's own
 252-bar daily reference series from its regression tool, real prices with volume."""
 
-import re
 from pathlib import Path
 
 import numpy as np
@@ -12,23 +11,18 @@ ROWS = 300
 LEADING_NAN = 7
 NULL_ROW = 150
 SEED = 20260910
+COLUMNS = ["open", "high", "low", "close", "volume"]
 
-TALIB_TEST_DATA = (
-    Path(__file__).parents[1] / "ta-lib" / "src" / "tools" / "ta_regtest" / "test_data.c"
-)
-TALIB_ARRAY = re.compile(r"TA_Real\s+TA_SREF_(\w+)_daily_ref_0_PRIV\[252\]\s*=\s*\{(.*?)\};", re.S)
+# TA-Lib's regression data, written from its test_data.c by tools/c_oracle/generate.py.
+TALIB_REFERENCE = Path(__file__).parent / "golden" / "talib_reference.csv"
 
 
 def talib_reference() -> pl.DataFrame:
     """TA-Lib's ``*_daily_ref_0`` arrays: open, high, low, close, volume, 252 bars."""
-    columns = {
-        name: np.array(re.split(r"[,\s]+", body.strip()), dtype=np.float64)
-        for name, body in TALIB_ARRAY.findall(TALIB_TEST_DATA.read_text())
-    }
-    assert list(columns) == ["open", "high", "low", "close", "volume"], list(columns)
+    df = pl.read_csv(TALIB_REFERENCE, comment_prefix="#", schema=dict.fromkeys(COLUMNS, pl.Float64))
+    assert df.height == 252, df.height
     rng = np.random.default_rng(SEED)
-    columns["periods"] = rng.integers(2, 30, 252).astype(np.float64)
-    return pl.DataFrame(columns)
+    return df.with_columns(pl.Series("periods", rng.integers(2, 30, 252).astype(np.float64)))
 
 
 def frame() -> pl.DataFrame:
