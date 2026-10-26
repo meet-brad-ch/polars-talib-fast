@@ -4,9 +4,10 @@
 #   From Windows (Git Bash):
 #     MSYS_NO_PATHCONV=1 wsl.exe -d Ubuntu-24.04 -- bash /mnt/c/Apps/Projects/polars-talib/tools/wsl_test.sh [branch]
 #
-# The clone ~/polars-talib is made from the Windows clone (its committed HEAD, or the given branch) and the ta-lib
-# submodule from its recorded URL, so the run tests what is committed, not the working copy. Setup (once, in WSL):
-# rustup (https://sh.rustup.rs) and uv (https://astral.sh/uv/install.sh); python3, gcc and cmake from apt.
+# The clone ~/polars-talib is made from the Windows clone (its committed HEAD, or the given branch), so the run
+# tests what is committed, not the working copy. The tests need no submodule: TA-Lib comes from the ta-lib crate and
+# the golden data is committed. Setup (once, in WSL): rustup (https://sh.rustup.rs) and uv
+# (https://astral.sh/uv/install.sh); python3 and gcc (the linker) from apt.
 # Logs: ~/polars-talib-logs/<step>.log (not /tmp, which WSL clears when it stops). Ends with DONE or FAILED.
 set -uo pipefail
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
@@ -19,7 +20,6 @@ rm -rf ~/polars-talib
 git clone -q "$src" ~/polars-talib || { say "FAILED clone of $src"; exit 1; }
 cd ~/polars-talib
 [ "$branch" = HEAD ] || git checkout -q "$branch" || { say "FAILED no branch $branch"; exit 1; }
-git submodule update --init -q || { say "FAILED submodule"; exit 1; }
 say "testing $(git rev-parse --short HEAD) with $(cargo --version), $(uv --version)"
 step() { local name=$1; shift; say "start $name"
   if "$@" > ~/polars-talib-logs/"$name".log 2>&1; then say "ok $name"
