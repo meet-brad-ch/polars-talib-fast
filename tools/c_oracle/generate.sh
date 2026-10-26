@@ -4,10 +4,13 @@
 #
 #   tools/c_oracle/generate.sh [out-dir]
 #
-# --no-sync: a sync would rebuild the plugin and drop the oracle from the environment again.
+# The environment is synced first (maturin, numpy, polars); every later step runs with --no-sync, because a sync
+# would drop the oracle from the environment again.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 say() { echo "[$(date +%T)] generate: $*"; }
+say "syncing the environment"
+uv sync -q || { say "FAILED sync"; exit 1; }
 say "TA-Lib C $(cat tools/c_oracle/ta-lib/VERSION): building the oracle"
 uv run --no-sync maturin develop --uv --release -q -m tools/c_oracle/Cargo.toml || { say "FAILED build"; exit 1; }
 say "writing golden data"
