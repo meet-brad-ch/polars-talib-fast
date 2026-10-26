@@ -146,7 +146,8 @@ uv sync                                  # builds the extension
 uv run pytest
 ```
 
-Needs a Rust toolchain. The C oracle (`tools/c_oracle`, only for new golden data) also needs
+Needs a Rust toolchain and, for the tests, Python 3.11 or newer (ta-lib-python 0.8.2, one
+of the oracles, has no wheel for 3.10). The C oracle (`tools/c_oracle`, only for new golden data) also needs
 the submodule (`git submodule update --init`) and a C compiler.
 
 ## License
