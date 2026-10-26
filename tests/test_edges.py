@@ -23,7 +23,7 @@ def test_integer_output_is_zero_before_lookback() -> None:
 
 
 def test_invalid_parameter_raises_talib_error() -> None:
-    with pytest.raises(pl.exceptions.ComputeError, match="TA_BAD_PARAM"):
+    with pytest.raises(pl.exceptions.ComputeError, match="BadParam"):
         SHORT.select(plta.sma(timeperiod=0))
 
 
@@ -102,7 +102,9 @@ def test_integer_parameter_beyond_32_bits_is_an_error() -> None:
 
 @pytest.mark.parametrize("df", [SHORT, SHORT.clear()], ids=["rows", "empty"])
 def test_invalid_parameter_error_names_the_value(df: pl.DataFrame) -> None:
-    with pytest.raises(pl.exceptions.ComputeError, match="SMA: timeperiod=0: TA_BAD_PARAM"):
+    with pytest.raises(
+        pl.exceptions.ComputeError, match=r"SMA: timeperiod=0: BadParam \(bad parameter\)"
+    ):
         df.select(plta.sma(timeperiod=0))
 
 

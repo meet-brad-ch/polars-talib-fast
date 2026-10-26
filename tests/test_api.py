@@ -7,7 +7,6 @@ import numpy as np
 import numpy.typing as npt
 import polars as pl
 import pytest
-import talib
 
 import polars_talib_fast as plta
 from data import frame, talib_reference
@@ -15,11 +14,23 @@ from polars_talib_fast import _stubs
 from polars_talib_fast._build import MODULES, PLUGIN, specs
 
 
-def test_hma_is_the_hull_composition(ohlcv: pl.DataFrame) -> None:
-    close = ohlcv["close"].to_numpy()
-    raw = 2 * talib.WMA(close, 8) - talib.WMA(close, 16)
-    got = ohlcv.select(plta.hma(period=16).alias("h"))["h"].to_numpy()
-    np.testing.assert_array_equal(got, talib.WMA(raw, 4))
+@pytest.mark.parametrize("period", range(4, 65))
+@pytest.mark.parametrize(
+    "data",
+    [frame().with_columns(pl.col("close").fill_null(strategy="forward")), talib_reference()],
+    ids=["synthetic", "talib-reference"],
+)
+def test_hma_is_the_hull_composition(data: pl.DataFrame, period: int) -> None:
+    """TA-Lib's HMA replaced this package's own: WMA(2 WMA(n // 2) - WMA(n), isqrt(n)). Same
+    rows without a value, same values up to the rounding of TA-Lib's fused single pass. On
+    data without a gap: after a NaN inside the data, TA-Lib's periodic reseed decides when
+    values resume, and that differs at a few periods (19 on the synthetic frame)."""
+    half, full = plta.wma(timeperiod=period // 2), plta.wma(timeperiod=period)
+    composed = plta.wma(2 * half - full, timeperiod=math.isqrt(period))
+    out = data.select(composed.alias("composed"), plta.hma(timeperiod=period).alias("hma"))
+    expected, got = out["composed"].to_numpy(), out["hma"].to_numpy()
+    np.testing.assert_array_equal(np.isnan(got), np.isnan(expected))
+    np.testing.assert_allclose(got, expected, rtol=1e-12)
 
 
 def test_committed_stubs_are_current() -> None:

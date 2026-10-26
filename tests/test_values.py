@@ -1,47 +1,72 @@
-"""Every function computes exactly what ta-lib-python computes: on the synthetic frame
-(leading NaN rows, a null) and on TA-Lib's own 252-bar reference data, on float64 and
-float32 input, for TA-Lib's defaults and for a short window. Per-group evaluation gives
-per-group results."""
+"""Every function computes exactly what TA-Lib's C library computes: the golden data in
+``tests/golden``, written by ``tools/c_oracle`` from the C library at the tag of the ``ta-lib``
+crate. On the synthetic frame (leading NaN rows, a null) and on TA-Lib's own 252-bar reference
+data, on float64 and float32 input, for TA-Lib's defaults and for a short window. Per-group
+evaluation gives per-group results."""
+
+from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 import polars as pl
 import pytest
-import talib
 
 import polars_talib_fast as plta
 from data import frame, talib_reference
-from polars_talib_fast._build import DEFAULT_COLUMN, Spec, specs
+from polars_talib_fast._build import Spec, specs
 
-SHORT_WINDOW = 3
+GOLDEN = Path(__file__).parent / "golden"
 FRAMES = {"synthetic": frame(), "talib-reference": talib_reference()}
+DTYPES = {"f64": pl.Float64, "f32": pl.Float32}
 
 
-def arrays(df: pl.DataFrame, spec: Spec) -> list[npt.NDArray[np.float64]]:
-    return [df[DEFAULT_COLUMN.get(c, c)].to_numpy().astype(np.float64) for c in spec.columns]
+class Golden:
+    """The C library's outputs for one frame, by dtype, function, variant and output."""
+
+    def __init__(self, frame_name: str) -> None:
+        with np.load(GOLDEN / f"{frame_name}.npz") as arrays:
+            self.arrays = {key: arrays[key] for key in arrays.files}
+
+    def variants(self, dtype: str, spec: Spec) -> list[str]:
+        prefix = f"{dtype}/{spec.name}/"
+        return sorted({k[len(prefix) :].split("/")[0] for k in self.arrays if k.startswith(prefix)})
+
+    def outputs(self, dtype: str, spec: Spec, variant: str) -> list[npt.NDArray[np.generic]]:
+        return [self.arrays[f"{dtype}/{spec.name}/{variant}/{o.name}"] for o in spec.outputs]
+
+    @staticmethod
+    def kwargs(variant: str) -> dict[str, int]:
+        """``default`` → no arguments; ``timeperiod=4`` → ``{"timeperiod": 4}``."""
+        if variant == "default":
+            return {}
+        name, value = variant.split("=")
+        return {name: int(value)}
 
 
-def assert_same(expr: pl.Expr, df: pl.DataFrame, expected: object) -> None:
+GOLDEN_DATA = {name: Golden(name) for name in FRAMES}
+
+
+def assert_same(expr: pl.Expr, df: pl.DataFrame, expected: list[npt.NDArray[np.generic]]) -> None:
     got = df.select(expr.alias("out"))["out"]
-    if isinstance(expected, tuple):
-        for field, values in zip(got.struct.fields, expected, strict=True):
-            np.testing.assert_array_equal(got.struct.field(field).to_numpy(), values)
-    else:
-        np.testing.assert_array_equal(got.to_numpy(), expected)
+    columns = [got.struct.field(f) for f in got.struct.fields] if len(expected) > 1 else [got]
+    assert len(columns) == len(expected)
+    for column, values in zip(columns, expected, strict=True):
+        assert column.dtype == (pl.Int32 if values.dtype == np.int32 else pl.Float64)
+        np.testing.assert_array_equal(column.to_numpy(), values)
 
 
-@pytest.mark.parametrize("dtype", [pl.Float64, pl.Float32], ids=["f64", "f32"])
-@pytest.mark.parametrize("data", FRAMES.values(), ids=FRAMES.keys())
+@pytest.mark.parametrize("dtype", DTYPES, ids=list(DTYPES))
+@pytest.mark.parametrize("frame_name", FRAMES, ids=list(FRAMES))
 @pytest.mark.parametrize("spec", specs(), ids=lambda s: s.python_name)
-def test_equals_talib(data: pl.DataFrame, spec: Spec, dtype: pl.DataType) -> None:
-    df = data.cast(dtype)
+def test_equals_c_library(frame_name: str, spec: Spec, dtype: str) -> None:
+    golden = GOLDEN_DATA[frame_name]
+    df = FRAMES[frame_name].cast(DTYPES[dtype])
     fn = getattr(plta, spec.python_name)
-    reference = getattr(talib, spec.name)
-    assert_same(fn(), df, reference(*arrays(df, spec)))
-    if any(p.name == "timeperiod" for p in spec.params):
-        assert_same(
-            fn(timeperiod=SHORT_WINDOW), df, reference(*arrays(df, spec), timeperiod=SHORT_WINDOW)
-        )
+    variants = golden.variants(dtype, spec)
+    expected_variants = 2 if any(p.name == "timeperiod" for p in spec.params) else 1
+    assert "default" in variants and len(variants) == expected_variants, variants
+    for variant in variants:
+        assert_same(fn(**Golden.kwargs(variant)), df, golden.outputs(dtype, spec, variant))
 
 
 @pytest.mark.parametrize("expr", [plta.sma(), plta.macd(), plta.cdldoji(), plta.obv()])

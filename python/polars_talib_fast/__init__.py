@@ -7,7 +7,6 @@ come from TA-Lib itself (see ``_build``), grouped into one module per TA-Lib gro
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING
 
 import polars as pl
@@ -19,7 +18,6 @@ from .math_operators import *  # noqa: F403
 from .math_transform import *  # noqa: F403
 from .momentum import *  # noqa: F403
 from .overlap import *  # noqa: F403
-from .overlap import wma
 from .pattern import *  # noqa: F403
 from .price_transform import *  # noqa: F403
 from .statistic import *  # noqa: F403
@@ -38,11 +36,6 @@ def get_functions() -> list[str]:
 
 def get_function_groups() -> dict[str, list[str]]:
     return {group: [s.python_name for s in specs() if s.group == group] for group in MODULES}
-
-
-def hma(real: IntoExpr = "close", period: int = 16) -> pl.Expr:
-    """Hull Moving Average: WMA(2 * WMA(n / 2) - WMA(n), isqrt(n)). Not a TA-Lib function."""
-    return wma(2 * wma(real, period // 2) - wma(real, period), math.isqrt(period))
 
 
 def supersmoother(real: IntoExpr = "close", period: float = 10.0) -> pl.Expr:

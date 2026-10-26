@@ -17,7 +17,7 @@ def cdl3inside(open: IntoExpr = ..., high: IntoExpr = ..., low: IntoExpr = ..., 
     Output: integer"""
 
 def cdl3linestrike(open: IntoExpr = ..., high: IntoExpr = ..., low: IntoExpr = ..., close: IntoExpr = ...) -> Expr:
-    """Three-Line Strike  (Pattern Recognition), TA-Lib CDL3LINESTRIKE.
+    """Three-Line Strike (Pattern Recognition), TA-Lib CDL3LINESTRIKE.
     
     Output: integer"""
 

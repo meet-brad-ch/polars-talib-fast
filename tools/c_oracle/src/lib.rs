@@ -63,25 +63,26 @@ fn call<'py>(
     offset: usize,
 ) -> PyResult<Vec<Bound<'py, PyList>>> {
     let function = Function::get(name).map_err(runtime_error)?;
-    let values = params
-        .iter()
-        .map(|p| {
-            if p.is_instance_of::<PyInt>() {
-                Ok(Number::Int(p.extract()?))
-            } else {
-                Ok(Number::Float(p.extract()?))
-            }
-        })
-        .collect::<PyResult<Vec<_>>>()?;
+    let values = params.iter().map(number).collect::<PyResult<Vec<_>>>()?;
     let slices: Vec<&[f64]> = columns.iter().map(Vec::as_slice).collect();
     let outputs = function.call(&slices, &values, offset).map_err(runtime_error)?;
-    outputs
-        .into_iter()
-        .map(|out| match out {
-            Column::Real(v) => PyList::new(py, v),
-            Column::Integer(v) => PyList::new(py, v),
-        })
-        .collect()
+    outputs.into_iter().map(|out| list(py, out)).collect()
+}
+
+/// A Python parameter value: an int stays an integer.
+fn number(p: &Bound<'_, PyAny>) -> PyResult<Number> {
+    if p.is_instance_of::<PyInt>() {
+        Ok(Number::Int(p.extract()?))
+    } else {
+        Ok(Number::Float(p.extract()?))
+    }
+}
+
+fn list(py: Python<'_>, column: Column) -> PyResult<Bound<'_, PyList>> {
+    match column {
+        Column::Real(v) => PyList::new(py, v),
+        Column::Integer(v) => PyList::new(py, v),
+    }
 }
 
 #[pymodule]

@@ -14,9 +14,9 @@ polars = { version = "0.55", default-features = false, features = ["dtype-struct
 pyo3 = { version = "0.29", features = ["extension-module", "abi3-py310"] }
 pyo3-polars = { version = "0.28", features = ["derive", "dtype-struct"] }
 serde = { version = "1", features = ["derive"] }
-
-[build-dependencies]
-cc = "1"
+# TA-Lib itself, the official Rust port. An exact pin: the golden test data is written by the C
+# library at the same tag (tools/c_oracle), and talib::version() reads the version from here.
+ta-lib = "=0.8.3"
 
 [profile.release]
 codegen-units = 1
