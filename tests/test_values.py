@@ -1,8 +1,9 @@
-"""Every function computes exactly what TA-Lib's C library computes: the golden data in
-``tests/golden``, written by ``tools/c_oracle`` from the C library at the tag of the ``ta-lib``
-crate. On the synthetic frame (leading NaN rows, a null) and on TA-Lib's own 252-bar reference
-data, on float64 and float32 input, for TA-Lib's defaults and for a short window. Per-group
-evaluation gives per-group results."""
+"""Every function computes exactly what TA-Lib's C library computes on the same platform: the
+golden data in ``tests/golden/<platform>``, written by ``tools/c_oracle`` from the C library at
+the tag of the ``ta-lib`` crate. On the synthetic frame (leading NaN rows, a null) and on
+TA-Lib's own 252-bar reference data, on float64 and float32 input, for TA-Lib's defaults and
+for a short window. Per-group evaluation gives per-group results. Per platform, because the
+functions TA-Lib flags ``USES_TRANSCENDENTAL`` use the platform's libm."""
 
 from pathlib import Path
 
@@ -12,7 +13,7 @@ import polars as pl
 import pytest
 
 import polars_talib_fast as plta
-from data import frame, talib_reference
+from data import frame, platform, talib_reference
 from polars_talib_fast._build import Spec, specs
 
 GOLDEN = Path(__file__).parent / "golden"
@@ -24,7 +25,10 @@ class Golden:
     """The C library's outputs for one frame, by dtype, function, variant and output."""
 
     def __init__(self, frame_name: str) -> None:
-        with np.load(GOLDEN / f"{frame_name}.npz") as arrays:
+        path = GOLDEN / platform() / f"{frame_name}.npz"
+        if not path.exists():
+            raise FileNotFoundError(f"{path}: run tools/c_oracle/generate.sh on this platform")
+        with np.load(path) as arrays:
             self.arrays = {key: arrays[key] for key in arrays.files}
 
     def variants(self, dtype: str, spec: Spec) -> list[str]:

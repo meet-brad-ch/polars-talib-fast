@@ -2,6 +2,7 @@
 (leading NaN rows, a null in the middle, a ``periods`` column for MAVP), and TA-Lib's own
 252-bar daily reference series from its regression tool, real prices with volume."""
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -15,6 +16,15 @@ COLUMNS = ["open", "high", "low", "close", "volume"]
 
 # TA-Lib's regression data, written from its test_data.c by tools/c_oracle/generate.py.
 TALIB_REFERENCE = Path(__file__).parent / "golden" / "talib_reference.csv"
+# Golden values are per platform: TA-Lib's transcendental functions use the platform's libm.
+PLATFORMS = {"win32": "windows", "linux": "linux", "darwin": "macos"}
+
+
+def platform() -> str:
+    """The name of this platform's golden data directory."""
+    if sys.platform not in PLATFORMS:
+        raise RuntimeError(f"no golden data for platform {sys.platform}")
+    return PLATFORMS[sys.platform]
 
 
 def talib_reference() -> pl.DataFrame:

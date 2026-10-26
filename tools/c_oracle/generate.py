@@ -8,9 +8,12 @@
 ``tests/golden``):
 
 - ``functions.json``: the C library's version and its description of every function;
-- ``<frame>.npz``: per frame of ``tests/data.py``, per input dtype (``f64``, ``f32`` cast) and
-  per variant (``default`` parameters, and ``timeperiod=<w>`` for a short window ``w`` where
-  there is a ``timeperiod``), every output, keyed ``<dtype>/<NAME>/<variant>/<output>``.
+- ``<platform>/<frame>.npz`` (``windows``, ``linux``, ``macos``): per frame of ``tests/data.py``,
+  per input dtype (``f64``, ``f32`` cast) and per variant (``default`` parameters, and
+  ``timeperiod=<w>`` for a short window ``w`` where there is a ``timeperiod``), every output,
+  keyed ``<dtype>/<NAME>/<variant>/<output>``. Per platform because the functions TA-Lib
+  flags ``USES_TRANSCENDENTAL`` call the platform's libm (``sin``, ``exp``, ``log``...), whose
+  last bit differs between platforms; on one platform, the C library and the crate agree.
 
 ``tests/golden/talib_reference.csv`` (TA-Lib's 252-bar regression data, which ``tests/data.py``
 reads) is always rewritten from the submodule first. Leading rows where any input is NaN are
@@ -184,7 +187,7 @@ class GoldenData:
         print(f"TA-Lib C {version} -> {self.out}")
         ReferenceData(self.TEST_DATA_C, self.GOLDEN / "talib_reference.csv").write(version)
         sys.path.insert(0, str(self.ROOT / "tests"))
-        from data import frame, talib_reference  # noqa: PLC0415  (reads the CSV just written)
+        from data import frame, platform, talib_reference  # noqa: PLC0415  (reads the new CSV)
 
         functions = c_oracle.functions()
         (self.out / "functions.json").write_text(
@@ -192,11 +195,13 @@ class GoldenData:
             encoding="utf-8",
             newline="\n",
         )
+        values = self.out / platform()
+        values.mkdir(exist_ok=True)
         generator = Generator([Spec.of(f) for f in functions])
         for name, df in {"synthetic": frame(), "talib-reference": talib_reference()}.items():
             arrays = generator.golden(df)
-            np.savez_compressed(self.out / f"{name}.npz", allow_pickle=False, **arrays)
-            print(f"{name}: {len(arrays)} arrays, {len(generator.specs)} functions")
+            np.savez_compressed(values / f"{name}.npz", allow_pickle=False, **arrays)
+            print(f"{values.name}/{name}: {len(arrays)} arrays, {len(generator.specs)} functions")
 
 
 if __name__ == "__main__":

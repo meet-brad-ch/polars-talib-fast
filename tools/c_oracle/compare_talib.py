@@ -46,14 +46,14 @@ class OracleCheck:
 
     def run(self) -> Summary:
         sys.path.insert(0, str(self.ROOT / "tests"))
-        from data import frame, talib_reference  # noqa: PLC0415
+        from data import frame, platform, talib_reference  # noqa: PLC0415
 
         shared = [n for n in self.functions if n in set(talib.get_functions())]
         for frame_name, data in {
             "synthetic": frame(),
             "talib-reference": talib_reference(),
         }.items():
-            with np.load(self.golden / f"{frame_name}.npz") as arrays:
+            with np.load(self.golden / platform() / f"{frame_name}.npz") as arrays:
                 golden = {k: arrays[k] for k in arrays.files}
             for dtype_name, dtype in self.DTYPES.items():
                 df = data.cast(dtype)
