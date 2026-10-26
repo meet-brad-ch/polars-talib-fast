@@ -1,0 +1,17 @@
+{
+ "vmath_transcendental": 0,
+ "functions": [
+  "ACOS",
+  "ASIN",
+  "ATAN",
+  "COS",
+  "COSH",
+  "EXP",
+  "LN",
+  "LOG10",
+  "SIN",
+  "SINH",
+  "TAN",
+  "TANH"
+ ]
+}
