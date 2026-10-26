@@ -3,8 +3,8 @@ name = "polars-talib-fast"
 version = "0.0.0"  # placeholder: CI sets the version from the release tag, see ci.yml
 description = "TA-Lib for Polars expressions, driven by TA-Lib's own function metadata"
 readme = "README.md"
-license = "MIT"
-license-files = ["LICENSE"]
+license = "MIT AND BSD-3-Clause"  # this package MIT; TA-Lib inside the wheel BSD-3-Clause
+license-files = ["LICENSE", "LICENSES/TA-Lib.txt"]
 requires-python = ">=3.10"
 dependencies = ["polars>=1.0"]
 authors = [{ name = "Radek" }]
